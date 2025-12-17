@@ -1,9 +1,0 @@
-installation:
-  version: 6.0.0-alpha.16
-  installDate: 2025-12-17T15:09:01.870Z
-  lastUpdated: 2025-12-17T15:09:01.870Z
-modules:
-  - core
-  - bmm
-customModules: []
-ides: []
