@@ -1,0 +1,19 @@
+name: dev-story-beads
+description: "Beads (bd) dev execution: pick a ready Beads issue, implement, comment progress, and close the issue."
+author: "BMad"
+
+config_source: "{project-root}/_bmad/bmm/config.yaml"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+user_skill_level: "{config_source}:user_skill_level"
+document_output_language: "{config_source}:document_output_language"
+date: system-generated
+
+installed_path: "{project-root}/_bmad/bmm/workflows/4-implementation/dev-story-beads"
+instructions: "{installed_path}/instructions.xml"
+validation: false
+template: false
+
+project_context: "**/project-context.md"
+
+standalone: true

@@ -1,0 +1,78 @@
+<workflow>
+  <critical>The workflow execution engine is governed by: {project-root}/_bmad/core/tasks/workflow.xml</critical>
+  <critical>You MUST have already loaded and processed: {installed_path}/workflow.yaml</critical>
+  <critical>Communicate all responses in {communication_language} and language MUST be tailored to {user_skill_level}</critical>
+  <critical>Generate all documents in {document_output_language}</critical>
+
+  <critical>
+    REAL Beads integration (steveyegge/beads):
+    - Canonical tracker is Beads issues (bd).
+    - This workflow validates a story spec BEFORE dev.
+
+    Fresh-context / objective review:
+    - Prefer running validation in a fresh session/context.
+    - If your IDE allows choosing a different LLM/model than the one that wrote the spec, do so.
+  </critical>
+
+  <critical>
+    ATOMIC SPEC CONVENTION (v1):
+    - Find the latest comment containing the marker header: "BMAD STORY SPEC v1".
+    - Do NOT edit old comments. If changes are needed, append a NEW "BMAD STORY SPEC v1" comment.
+    - Only mark ready-for-dev when the spec is implementable and testable.
+  </critical>
+
+  <step n="1" goal="Select story to validate">
+    <action>Ensure `bd` is installed and initialized (bd init).</action>
+    <action>Prefer orchestrator selection if present:
+      - Read: bd config get bmad.loop.current_issue
+      - If set, use that as {{issue_id}}.
+    </action>
+    <action>Otherwise, select a story needing validation:
+      - bd list --status open --label bmad-story,needs-validation --json
+      - Choose the smallest numeric story key label (story-N-M).
+      - Set {{issue_id}}.
+    </action>
+    <action>Load issue: bd show {{issue_id}} --json</action>
+    <action>Load comments: bd comments {{issue_id}} --json (or without --json if unsupported) and select latest "BMAD STORY SPEC v1".</action>
+    <action>Load {project_context} if exists</action>
+    <action>Load relevant docs (epics/prd/architecture) for cross-checking if needed</action>
+  </step>
+
+  <step n="2" goal="Validate spec quality and fix if needed">
+    <action>Review spec for:</action>
+    <action>
+      - Clear scope + non-goals
+      - Acceptance criteria that are verifiable
+      - Task breakdown is actionable and ordered
+      - Constraints/architecture alignment
+      - Test plan is concrete (commands, coverage expectations)
+      - No missing dependencies or ambiguous requirements
+    </action>
+
+    <check if="spec has gaps or contradictions">
+      <action>Append a corrected spec comment (NEW):</action>
+      <action>
+        bd comments add {{issue_id}} "---\nBMAD STORY SPEC v1\nIssue: {{issue_id}}\nGenerated: {date}\n---\n\n## Story\n<revised>\n\n## Acceptance Criteria\n- (AC1) ...\n\n## Tasks / Subtasks (Authoritative)\n- [ ] ...\n\n## Constraints / Notes\n- ...\n\n## Test Plan (Required)\n- ...\n\n## Validation Notes\n- Fixed: <bullets of what changed and why>"
+      </action>
+      <action>Keep the story in validation state:
+        - bd label add {{issue_id}} needs-validation
+        - bd label remove {{issue_id}} ready-for-dev
+      </action>
+      <output>🔁 Spec improved and re-posted (append-only). Re-run validate-story-beads until ready.</output>
+    </check>
+
+    <check if="spec is implementable and testable">
+      <action>Mark ready for dev:</action>
+      <action>
+        - bd label add {{issue_id}} ready-for-dev
+        - bd label remove {{issue_id}} needs-validation
+        - bd label remove {{issue_id}} needs-spec
+      </action>
+      <action>Record validation result:</action>
+      <action>
+        bd comments add {{issue_id}} "BMAD VALIDATION v1\nResult: PASS\nNotes: <1-5 bullets>"
+      </action>
+      <output>✅ Spec validated; story is ready-for-dev</output>
+    </check>
+  </step>
+</workflow>

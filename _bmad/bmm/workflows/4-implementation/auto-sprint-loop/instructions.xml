@@ -1,0 +1,185 @@
+<workflow>
+  <critical>The workflow execution engine is governed by: {project-root}/_bmad/core/tasks/workflow.xml</critical>
+  <critical>You MUST have already loaded and processed: {installed_path}/workflow.yaml</critical>
+  <critical>Communicate all responses in {communication_language} and language MUST be tailored to {user_skill_level}</critical>
+  <critical>Generate all documents in {document_output_language}</critical>
+  <critical>
+    BEADS + AUTO LOOP (RESUMABLE):
+
+    - The loop is automated and resumable via Beads so the agent can be dismissed (context cleared) between phases.
+    - Never edit Beads storage files directly; use CLI only.
+    - Stop-mode control: user can choose to stop after (a) 1 story, (b) 1 epic, or (c) the whole project.
+      This choice is asked ONLY if Beads does not already contain loop.stop_mode.
+
+    Land the Plane protocol:
+    - Run: {beads.cli.init}
+    - Before/after any shared-memory write burst: {beads.cli.land}
+  </critical>
+
+  <step n="0" goal="Initialize Beads and load resume state">
+    <action>Run: {beads.cli.init}</action>
+    <action>Run: {beads.cli.land}</action>
+    <action>Read resume state from Beads:
+      - {beads.cli.get} loop state
+      - {beads.cli.get} loop story_key
+      - {beads.cli.get} loop phase
+      - {beads.cli.get} loop iteration
+      - {beads.cli.get} loop stop_mode
+    </action>
+    <action>If missing, set defaults in Beads:
+      - {beads.cli.set} loop state {"mode":"auto","status":"running"}
+      - {beads.cli.set} loop phase "sprint-planning"
+      - {beads.cli.set} loop iteration 0
+    </action>
+    <check if="loop stop_mode is missing">
+      <output>Chọn chế độ chạy vòng lặp (mình sẽ lưu vào Beads để lần sau không hỏi nữa):</output>
+      <output>1) Dừng sau khi xong 1 story</output>
+      <output>2) Dừng sau khi xong 1 epic</output>
+      <output>3) Chạy đến khi xong cả project</output>
+      <ask>Nhập 1 / 2 / 3:</ask>
+      <check if="user chooses 1">
+        <action>Run: {beads.cli.set} loop stop_mode "story"</action>
+      </check>
+      <check if="user chooses 2">
+        <action>Run: {beads.cli.set} loop stop_mode "epic"</action>
+      </check>
+      <check if="user chooses 3">
+        <action>Run: {beads.cli.set} loop stop_mode "project"</action>
+      </check>
+    </check>
+    <action>Run: {beads.cli.land}</action>
+  </step>
+
+  <step n="1" goal="Ensure sprint-status exists and is current">
+    <critical>No-ask: if sprint-status.yaml missing or stale, regenerate automatically.</critical>
+    <action>Check if {sprint_status} exists</action>
+    <check if="{sprint_status} file does NOT exist">
+      <action>Run sprint-planning workflow and generate sprint-status.yaml</action>
+      <action>Write Beads checkpoint:
+        - {beads.cli.set} loop phase "sprint-planning"
+        - {beads.cli.append} loop journal {"event":"sprint-planning-ran","ts":"{date}"}
+      </action>
+      <action>Run: {beads.cli.land}</action>
+    </check>
+    <check if="{sprint_status} file exists">
+      <action>Load the FULL file: {sprint_status} (read from start to end)</action>
+      <action>Compute if sprint is complete: no story keys remain in any non-done state (backlog/ready-for-dev/in-progress/review)</action>
+    </check>
+  </step>
+
+  <step n="2" goal="Stop condition">
+    <check if="sprint is complete">
+      <action>Write Beads completion:
+        - {beads.cli.land}
+        - {beads.cli.set} loop state {"mode":"auto","status":"done","completedAt":"{date}"}
+        - {beads.cli.append} loop journal {"event":"sprint-complete","ts":"{date}"}
+        - {beads.cli.land}
+      </action>
+      <output>✅ Sprint is complete (all stories done). Workflow finished.</output>
+      <action>HALT</action>
+    </check>
+  </step>
+
+  <step n="3" goal="Select next story automatically">
+    <critical>No-ask: always pick the next actionable story in order.</critical>
+    <action>Load the FULL file: {sprint_status}</action>
+    <action>Find the FIRST story key (top to bottom order) where status is:
+      - backlog OR ready-for-dev OR in-progress OR review
+      Prefer backlog (needs story creation) first.
+    </action>
+    <action>Set {{story_key}} to selected key</action>
+    <action>Write Beads checkpoint:
+      - {beads.cli.set} loop story_key {{story_key}}
+      - {beads.cli.append} loop journal {"event":"selected-story","story_key":"{{story_key}}","ts":"{date}"}
+    </action>
+    <action>Run: {beads.cli.land}</action>
+  </step>
+
+  <step n="4" goal="Create story if backlog">
+    <action>Load {sprint_status} and read development_status[{{story_key}}]</action>
+    <check if="status == 'backlog'">
+      <critical>No-ask: create story for {{story_key}} automatically.</critical>
+      <action>Run create-story workflow for {{story_key}} (no elicitation, yolo draft)</action>
+      <action>After story file exists, ensure story Status becomes ready-for-dev (or per create-story output)</action>
+      <action>Write Beads checkpoint:
+        - {beads.cli.set} loop phase "create-story"
+        - {beads.cli.append} loop journal {"event":"story-created","story_key":"{{story_key}}","ts":"{date}"}
+      </action>
+      <action>Run: {beads.cli.land}</action>
+    </check>
+  </step>
+
+  <step n="5" goal="Validate story and auto-fix until developer-ready">
+    <critical>No-ask: validate and apply fixes automatically.</critical>
+    <action>Run validate-create-story for {{story_key}} (validate-workflow mode)</action>
+    <action>If validation identifies gaps: update the story file immediately and re-run validation once; repeat until validation passes or a hard HALT condition occurs (missing docs or cannot write file)</action>
+    <action>Write Beads checkpoint:
+      - {beads.cli.set} loop phase "validate-story"
+      - {beads.cli.append} loop journal {"event":"story-validated","story_key":"{{story_key}}","ts":"{date}"}
+    </action>
+    <action>Run: {beads.cli.land}</action>
+  </step>
+
+  <step n="6" goal="Develop the story">
+    <critical>No-ask: execute dev-story end-to-end per story tasks.</critical>
+    <action>Run dev-story for {{story_key}} (auto-discover story file, implement tasks/subtasks in order, tests required)</action>
+    <action>Ensure story Status becomes review (or in-progress if blocked) and sprint-status is synced accordingly</action>
+    <action>Write Beads checkpoint:
+      - {beads.cli.set} loop phase "dev-story"
+      - {beads.cli.append} loop journal {"event":"dev-complete","story_key":"{{story_key}}","ts":"{date}"}
+    </action>
+    <action>Run: {beads.cli.land}</action>
+  </step>
+
+  <step n="7" goal="Review and auto-fix until done">
+    <critical>No-ask: run code-review and ALWAYS choose auto-fix.</critical>
+    <action>Run code-review for {{story_key}} and automatically choose option (1) Fix ALL HIGH+MEDIUM issues now</action>
+    <action>After fixes, code-review updates story Status to done or in-progress and syncs sprint-status accordingly</action>
+    <check if="new_status != 'done'">
+      <action>Repeat code-review auto-fix loop until new_status == 'done' (or HALT condition: cannot fix due to missing info)</action>
+    </check>
+    <action>Load the FULL file: {sprint_status}</action>
+    <action>Set {{post_status}} = development_status[{{story_key}}] (authoritative)</action>
+    <action>Write Beads checkpoint:
+      - {beads.cli.set} loop phase "review"
+      - {beads.cli.append} loop journal {"event":"review-done","story_key":"{{story_key}}","ts":"{date}"}
+    </action>
+    <action>Run: {beads.cli.land}</action>
+  </step>
+
+  <step n="8" goal="Stop-mode gate (story/epic/project)">
+    <action>Read stop mode from Beads: {beads.cli.get} loop stop_mode</action>
+    <action>Load the FULL file: {sprint_status}</action>
+    <action>Derive {{epic_num}} from {{story_key}} by taking the number before the first dash (e.g., \"2-5-...\" → 2)</action>
+    <action>Compute if epic is complete: no story keys for this epic remain in a non-done state</action>
+
+    <check if="stop_mode == 'story' AND {{post_status}} == 'done'">
+      <action>Write Beads checkpoint: {beads.cli.append} loop journal {"event":"stop-after-story","story_key":"{{story_key}}","ts":"{date}"}</action>
+      <action>Run: {beads.cli.land}</action>
+      <output>⏸️ Đã hoàn thành 1 story ({{story_key}}). Dừng theo chế độ stop_mode=story. Chạy lại auto-sprint-loop để tiếp tục story tiếp theo.</output>
+      <action>HALT</action>
+    </check>
+
+    <check if="stop_mode == 'epic' AND epic is complete">
+      <action>Write Beads checkpoint: {beads.cli.append} loop journal {"event":"stop-after-epic","epic_num":"{{epic_num}}","ts":"{date}"}</action>
+      <action>Run: {beads.cli.land}</action>
+      <output>⏸️ Đã hoàn thành epic {{epic_num}}. Dừng theo chế độ stop_mode=epic. Chạy lại auto-sprint-loop để tiếp tục epic tiếp theo.</output>
+      <action>HALT</action>
+    </check>
+  </step>
+
+  <step n="9" goal="Increment iteration and continue loop (resumable, context-clear friendly)">
+    <critical>
+      Context clearing:
+      - This workflow is resumable using Beads.
+      - After writing the checkpoint, it is safe to dismiss/clear agent context.
+      - Re-running the same workflow trigger must continue automatically without user questions.
+    </critical>
+    <action>Increment loop iteration in Beads</action>
+    <action>Set loop phase = "select-next"</action>
+    <action>Append journal event: {"event":"loop-continue","ts":"{date}"}</action>
+    <action>Run: {beads.cli.land}</action>
+    <action>GOTO step 1</action>
+  </step>
+
+</workflow>

@@ -1,0 +1,37 @@
+name: validate-story-beads
+description: "Beads (bd) story spec validation: review BMAD STORY SPEC v1 for completeness/implementability, fix spec if needed, then mark ready-for-dev."
+author: "BMad"
+
+config_source: "{project-root}/_bmad/bmm/config.yaml"
+output_folder: "{config_source}:output_folder"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+document_output_language: "{config_source}:document_output_language"
+user_skill_level: "{config_source}:user_skill_level"
+date: system-generated
+
+installed_path: "{project-root}/_bmad/bmm/workflows/4-implementation/validate-story-beads"
+instructions: "{installed_path}/instructions.xml"
+validation: false
+template: false
+
+project_context: "**/project-context.md"
+
+input_file_patterns:
+  epics:
+    description: "Enhanced epics+stories file with BDD and source hints"
+    whole: "{output_folder}/*epic*.md"
+    sharded: "{output_folder}/*epic*/*.md"
+    load_strategy: "SELECTIVE_LOAD"
+  prd:
+    description: "PRD (fallback)"
+    whole: "{output_folder}/*prd*.md"
+    sharded: "{output_folder}/*prd*/*.md"
+    load_strategy: "SELECTIVE_LOAD"
+  architecture:
+    description: "Architecture (fallback)"
+    whole: "{output_folder}/*architecture*.md"
+    sharded: "{output_folder}/*architecture*/*.md"
+    load_strategy: "SELECTIVE_LOAD"
+
+standalone: true
