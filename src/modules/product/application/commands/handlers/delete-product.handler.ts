@@ -31,3 +31,6 @@ export class DeleteProductHandler implements ICommandHandler<
     await this.productRepository.save(product);
   }
 }
+
+
+

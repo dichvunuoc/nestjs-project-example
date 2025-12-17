@@ -35,3 +35,6 @@ export class ProductDeletedEvent implements IDomainEvent {
   }
 }
 
+
+
+

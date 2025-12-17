@@ -6,3 +6,6 @@ import { ICommand } from '@core/application';
 export class DeleteProductCommand implements ICommand {
   constructor(public readonly id: string) {}
 }
+
+
+

@@ -47,3 +47,6 @@ export class ProductUpdatedEvent implements IDomainEvent {
   }
 }
 
+
+
+
