@@ -7,3 +7,4 @@ export * from './pagination';
 export * from './logger';
 export * from './config';
 export * from './metrics';
+export * from './startup';

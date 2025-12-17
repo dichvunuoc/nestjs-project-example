@@ -1,0 +1,42 @@
+node_modules
+npm-debug.log
+dist
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+coverage
+.nyc_output
+*.log
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Documentation
+*.md
+!README.md
+
+# Tests
+test
+*.test.ts
+*.spec.ts
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
+# Docker
+docker
+Dockerfile*
+docker-compose*.yml
+
+# Kubernetes
+k8s
+helm
+
+# Scripts
+scripts
