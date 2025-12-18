@@ -95,3 +95,6 @@ Token `DATABASE` vẫn được export và alias cho `DATABASE_WRITE` để đ�
 - Cả 2 connections đều sử dụng cùng schema definition
 - Write connection là source of truth, read connection có thể có replication lag
 
+
+
+

@@ -31,3 +31,6 @@ export class IncreaseStockHandler implements ICommandHandler<
     await this.productRepository.save(product);
   }
 }
+
+
+

@@ -72,3 +72,6 @@ export class SuccessResponseDto<T = any> implements ApiResponse<T> {
     return new SuccessResponseDto(undefined, 204, message);
   }
 }
+
+
+

@@ -41,3 +41,6 @@ export class NotFoundException extends BaseException {
     return NotFoundException.resource(entityName, entityId);
   }
 }
+
+
+

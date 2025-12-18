@@ -10,3 +10,6 @@ export class GetProductQuery extends IQuery<ProductDto> {
     super();
   }
 }
+
+
+
