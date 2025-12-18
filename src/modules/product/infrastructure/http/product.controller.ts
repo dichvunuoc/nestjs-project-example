@@ -17,6 +17,8 @@ import {
   COMMAND_BUS_TOKEN,
   QUERY_BUS_TOKEN,
 } from '@core';
+import { LoggerService, CorrelationId } from '@core/common/logger';
+import { MetricsService } from '@core/common/metrics';
 import {
   CreateProductCommand,
   UpdateProductCommand,
@@ -39,20 +41,49 @@ import {
  *
  * Presentation layer - handles HTTP requests
  * Delegates to Command/Query buses (CQRS pattern)
+ *
+ * Production Features:
+ * - Correlation ID tracking
+ * - Structured logging
+ * - Metrics collection
  */
 @Controller('products')
 export class ProductController {
+  private requestCounter: any;
+
   constructor(
     @Inject(COMMAND_BUS_TOKEN) private readonly commandBus: ICommandBus,
     @Inject(QUERY_BUS_TOKEN) private readonly queryBus: IQueryBus,
-  ) {}
+    private readonly logger: LoggerService,
+    private readonly metrics: MetricsService,
+  ) {
+    // Set logger context
+    this.logger.setContext({ service: 'ProductController' });
+
+    // Create metrics
+    this.requestCounter = metrics.createCounter({
+      name: 'product_requests_total',
+      help: 'Total number of product API requests',
+      labelNames: ['method', 'endpoint'],
+    });
+  }
 
   /**
    * Create product
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateProductDto): Promise<{ id: string }> {
+  async create(
+    @Body() dto: CreateProductDto,
+    @CorrelationId() correlationId: string,
+  ): Promise<{ id: string }> {
+    this.requestCounter.inc({ method: 'POST', endpoint: '/products' });
+
+    this.logger.log('Creating product', 'ProductController.create', {
+      productName: dto.name,
+      correlationId,
+    });
+
     const command = new CreateProductCommand(
       dto.name,
       dto.description,
@@ -65,6 +96,12 @@ export class ProductController {
     const id = await this.commandBus.execute<CreateProductCommand, string>(
       command,
     );
+
+    this.logger.log('Product created', 'ProductController.create', {
+      productId: id,
+      correlationId,
+    });
+
     return { id };
   }
 
@@ -72,9 +109,26 @@ export class ProductController {
    * Get product by ID
    */
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<ProductDto> {
+  async getById(
+    @Param('id') id: string,
+    @CorrelationId() correlationId: string,
+  ): Promise<ProductDto> {
+    this.requestCounter.inc({ method: 'GET', endpoint: '/products/:id' });
+
+    this.logger.log('Getting product', 'ProductController.getById', {
+      productId: id,
+      correlationId,
+    });
+
     const query = new GetProductQuery(id);
-    return this.queryBus.execute(query);
+    const result = await this.queryBus.execute(query);
+
+    this.logger.log('Product retrieved', 'ProductController.getById', {
+      productId: id,
+      correlationId,
+    });
+
+    return result;
   }
 
   /**
