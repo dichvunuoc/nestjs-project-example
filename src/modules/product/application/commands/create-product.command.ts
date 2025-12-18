@@ -14,3 +14,6 @@ export class CreateProductCommand implements ICommand {
     public readonly category: string,
   ) {}
 }
+
+
+

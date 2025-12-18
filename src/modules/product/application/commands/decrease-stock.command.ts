@@ -9,3 +9,6 @@ export class DecreaseStockCommand implements ICommand {
     public readonly quantity: number,
   ) {}
 }
+
+
+
