@@ -1,4 +1,4 @@
-import { DomainException } from '@core/common';
+import { DomainException } from '@core/domain';
 import { Product } from '../entities';
 import type { StockAdjustmentItem } from '../../application/commands/bulk-stock-adjustment.command';
 

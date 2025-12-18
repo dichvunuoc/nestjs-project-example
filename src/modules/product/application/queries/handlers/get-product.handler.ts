@@ -1,8 +1,9 @@
 import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
 import { IQueryHandler as ICoreQueryHandler } from '@core/application';
+import { NotFoundException } from '@core/common';
 import { GetProductQuery } from '../get-product.query';
 import { ProductDto } from '../../dtos';
-import { NotFoundException, Inject } from '@nestjs/common';
+import { Inject } from '@nestjs/common';
 import { type IProductReadDao } from '@modules/product/application/queries/ports';
 
 /**
@@ -25,7 +26,7 @@ export class GetProductHandler
     const product = await this.productReadDao.findById(query.id);
 
     if (!product) {
-      throw new NotFoundException(`Product with id "${query.id}" not found`);
+      throw NotFoundException.entity('Product', query.id);
     }
 
     return product;

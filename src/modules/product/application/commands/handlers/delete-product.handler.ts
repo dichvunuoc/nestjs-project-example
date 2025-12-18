@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@core';
+import { NotFoundException } from '@core/common';
 import { DeleteProductCommand } from '../delete-product.command';
 import { type IProductRepository } from '@modules/product/domain/repositories';
-import { NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 
 /**
@@ -21,7 +21,7 @@ export class DeleteProductHandler implements ICommandHandler<
     // Load aggregate
     const product = await this.productRepository.getById(command.id);
     if (!product) {
-      throw new NotFoundException(`Product with id "${command.id}" not found`);
+      throw NotFoundException.entity('Product', command.id);
     }
 
     // Delete aggregate (domain logic + events)
@@ -31,6 +31,3 @@ export class DeleteProductHandler implements ICommandHandler<
     await this.productRepository.save(product);
   }
 }
-
-
-

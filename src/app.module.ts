@@ -1,16 +1,25 @@
 import { Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { CoreModule } from '../libs/core';
 import { DatabaseModule } from './database/database.module';
-import { HealthModule } from '../libs/core/common/health';
+import { HealthModule, LoggingModule } from '../libs/core/common';
 import { ProductModule } from './modules/product/product.module';
 
 @Global()
 @Module({
   imports: [
-    CoreModule, // DDD/CQRS Core Module - Global module
-    DatabaseModule, // Drizzle Database
-    HealthModule, // Health check endpoints
-    ProductModule, // Product Feature Module (DDD/CQRS Example)
+    // Configuration (loads .env)
+    ConfigModule.forRoot({ isGlobal: true }),
+    // Structured Logging with Pino
+    LoggingModule,
+    // DDD/CQRS Core Module - Global module
+    CoreModule,
+    // Drizzle Database
+    DatabaseModule,
+    // Health check endpoints
+    HealthModule,
+    // Product Feature Module (DDD/CQRS Example)
+    ProductModule,
   ],
 })
 export class AppModule {}

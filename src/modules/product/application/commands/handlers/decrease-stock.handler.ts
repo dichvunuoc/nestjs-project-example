@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@core';
+import { NotFoundException } from '@core/common';
 import { DecreaseStockCommand } from '../decrease-stock.command';
-import { NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { type IProductRepository } from '@modules/product/domain/repositories';
 
@@ -21,7 +21,7 @@ export class DecreaseStockHandler implements ICommandHandler<
     // Load aggregate
     const product = await this.productRepository.getById(command.id);
     if (!product) {
-      throw new NotFoundException(`Product with id "${command.id}" not found`);
+      throw NotFoundException.entity('Product', command.id);
     }
 
     // Decrease stock (domain logic + events)
@@ -31,6 +31,3 @@ export class DecreaseStockHandler implements ICommandHandler<
     await this.productRepository.save(product);
   }
 }
-
-
-

@@ -1,4 +1,5 @@
 import { IDomainEvent } from '@core/domain';
+import { randomUUID } from 'crypto';
 
 /**
  * Product Deleted Domain Event
@@ -25,7 +26,7 @@ export class ProductDeletedEvent implements IDomainEvent {
       causationId?: string;
     },
   ) {
-    this.eventId = `${aggregateId}-${Date.now()}`;
+    this.eventId = randomUUID();
     this.eventType = 'ProductDeleted';
     this.aggregateId = aggregateId;
     this.aggregateType = 'Product';

@@ -1,5 +1,4 @@
-import { AggregateRoot, ISoftDeletable } from '@core/domain';
-import { DomainException } from '@core/common';
+import { AggregateRoot, ISoftDeletable, DomainException } from '@core/domain';
 import { Price, ProductId } from '../value-objects';
 import {
   ProductCreatedEvent,

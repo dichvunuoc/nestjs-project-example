@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ICommandHandler as ICoreCommandHandler } from '@core/application';
+import { NotFoundException } from '@core/common';
 import { UpdateProductCommand } from '../update-product.command';
-import { NotFoundException } from '@nestjs/common';
 import { Inject } from '@nestjs/common';
 import { type IProductRepository } from '@modules/product/domain/repositories';
 import { Price } from '@modules/product/domain';
@@ -24,7 +24,7 @@ export class UpdateProductHandler
     // Load aggregate
     const product = await this.productRepository.getById(command.id);
     if (!product) {
-      throw new NotFoundException(`Product with id "${command.id}" not found`);
+      throw NotFoundException.entity('Product', command.id);
     }
 
     // Prepare update data

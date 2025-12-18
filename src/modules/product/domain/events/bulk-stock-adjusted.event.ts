@@ -1,4 +1,5 @@
 import { IDomainEvent } from '@core/domain';
+import { randomUUID } from 'crypto';
 
 export interface BulkStockAdjustmentItem {
   productId: string;
@@ -48,7 +49,7 @@ export class BulkStockAdjustedEvent implements IDomainEvent {
       causationId?: string;
     },
   ) {
-    this.eventId = `bulk-stock-${aggregateId}-${Date.now()}`;
+    this.eventId = randomUUID();
     this.eventType = 'BulkStockAdjusted';
     this.aggregateId = aggregateId;
     this.aggregateType = 'Product';

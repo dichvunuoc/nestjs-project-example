@@ -8,6 +8,7 @@ import { EventBus } from './infrastructure/events/event-bus';
 export const COMMAND_BUS_TOKEN = Symbol('ICommandBus');
 export const QUERY_BUS_TOKEN = Symbol('IQueryBus');
 export const EVENT_BUS_TOKEN = Symbol('IEventBus');
+export const UNIT_OF_WORK_TOKEN = Symbol('IUnitOfWork');
 
 /**
  * Core Module - Global Module cho DDD/CQRS Architecture

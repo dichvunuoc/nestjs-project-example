@@ -1,4 +1,5 @@
 import { IDomainEvent } from '@core/domain';
+import { randomUUID } from 'crypto';
 
 export interface ProductCreatedEventData {
   name: string;
@@ -37,7 +38,7 @@ export class ProductCreatedEvent implements IDomainEvent {
       causationId?: string;
     },
   ) {
-    this.eventId = `${aggregateId}-${Date.now()}`;
+    this.eventId = randomUUID();
     this.eventType = 'ProductCreated';
     this.aggregateId = aggregateId;
     this.aggregateType = 'Product';

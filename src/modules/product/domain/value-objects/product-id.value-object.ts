@@ -1,5 +1,4 @@
-import { BaseValueObject } from '@core/domain';
-import { DomainException } from '@core/common';
+import { BaseValueObject, DomainException } from '@core/domain';
 
 /**
  * Product ID Value Object
