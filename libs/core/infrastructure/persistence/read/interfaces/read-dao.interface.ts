@@ -20,4 +20,3 @@ export interface IReadDao {
    */
   executeCount(sql: string, params?: any[]): Promise<number>;
 }
-

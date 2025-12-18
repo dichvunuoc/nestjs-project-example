@@ -46,4 +46,3 @@ export class ProductUpdatedEvent implements IDomainEvent {
     this.metadata = metadata;
   }
 }
-

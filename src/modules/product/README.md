@@ -207,3 +207,6 @@ Content-Type: application/json
 - **CQRS Separation**: Write side (Aggregate) và Read side (Read DAO) tách biệt
 - **Dependency Inversion**: Application layer chỉ phụ thuộc vào interfaces (Ports), không phụ thuộc vào implementations (Adapters)
 
+
+
+

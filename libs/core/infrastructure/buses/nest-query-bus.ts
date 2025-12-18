@@ -21,6 +21,6 @@ export class NestQueryBus implements IQueryBus {
   async execute<TResult>(query: IQuery<TResult>): Promise<TResult> {
     // Type casting needed because @nestjs/cqrs QueryBus has different signature
     // but runtime behavior is compatible
-    return this.cqrsQueryBus.execute(query as any) as Promise<TResult>;
+    return this.cqrsQueryBus.execute(query as any);
   }
 }

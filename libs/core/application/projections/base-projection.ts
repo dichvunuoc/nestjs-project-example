@@ -20,7 +20,9 @@ import { IDomainEvent } from '../../domain/events';
  * @template TEvent - Type của Domain Event mà projection này xử lý
  */
 @Injectable()
-export abstract class BaseProjection<TEvent extends IDomainEvent> implements IProjection<TEvent> {
+export abstract class BaseProjection<
+  TEvent extends IDomainEvent,
+> implements IProjection<TEvent> {
   /**
    * Logger instance với projection name
    */

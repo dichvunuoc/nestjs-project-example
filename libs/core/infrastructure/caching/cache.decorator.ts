@@ -51,7 +51,7 @@ export function Cache(
 
     descriptor.value = async function (...args: any[]) {
       // Get cache service from instance
-      const cacheService: ICacheService = (this as any).cacheService;
+      const cacheService: ICacheService = this.cacheService;
 
       if (!cacheService) {
         // If no cache service, just execute original method
@@ -111,7 +111,7 @@ export function CacheInvalidate(keys: string | string[]) {
 
     descriptor.value = async function (...args: any[]) {
       // Get cache service from instance
-      const cacheService: ICacheService = (this as any).cacheService;
+      const cacheService: ICacheService = this.cacheService;
 
       // Execute original method first
       const result = await originalMethod.apply(this, args);

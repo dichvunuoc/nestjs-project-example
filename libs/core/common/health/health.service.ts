@@ -129,4 +129,3 @@ export class HealthService {
     return HealthStatus.UP;
   }
 }
-

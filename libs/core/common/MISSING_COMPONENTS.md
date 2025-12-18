@@ -225,3 +225,6 @@ Dự án hiện tại đã có:
 - Domain và Application layer phải pure TypeScript, không phụ thuộc framework
 - Sử dụng Dependency Injection với interfaces (Ports & Adapters pattern)
 
+
+
+

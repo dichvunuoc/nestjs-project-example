@@ -9,4 +9,3 @@ export class CreateProductDto {
   stock: number;
   category: string;
 }
-

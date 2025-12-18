@@ -9,4 +9,3 @@ export class UpdateProductDto {
   stock?: number;
   category?: string;
 }
-

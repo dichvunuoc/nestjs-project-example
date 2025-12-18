@@ -29,4 +29,3 @@ export class HealthModule implements OnModuleInit {
     this.healthService.registerIndicator('redis', this.redisIndicator);
   }
 }
-

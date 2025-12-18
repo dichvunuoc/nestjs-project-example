@@ -20,7 +20,10 @@ import { IEventBus } from './interfaces/event-bus.interface';
 @Injectable()
 export class EventBus implements IEventBus {
   private readonly logger = new Logger(EventBus.name);
-  private customHandlers: Map<string, Array<(event: IDomainEvent) => Promise<void>>> = new Map();
+  private customHandlers: Map<
+    string,
+    Array<(event: IDomainEvent) => Promise<void>>
+  > = new Map();
 
   constructor(private readonly cqrsEventBus: CqrsEventBus) {}
 
@@ -38,13 +41,18 @@ export class EventBus implements IEventBus {
     // Publish to custom handlers (for manual subscriptions)
     const handlers = this.customHandlers.get(event.eventType) || [];
     if (handlers.length > 0) {
-      this.logger.debug(`Publishing event ${event.eventType} to ${handlers.length} custom handler(s)`);
+      this.logger.debug(
+        `Publishing event ${event.eventType} to ${handlers.length} custom handler(s)`,
+      );
       await Promise.all(
         handlers.map(async (handler) => {
           try {
             await handler(event);
           } catch (error) {
-            this.logger.error(`Error handling event ${event.eventType}:`, error);
+            this.logger.error(
+              `Error handling event ${event.eventType}:`,
+              error,
+            );
             // Continue với other handlers even if one fails
           }
         }),
@@ -61,11 +69,16 @@ export class EventBus implements IEventBus {
    * @param eventType Event type to subscribe to
    * @param handler Handler function
    */
-  subscribe<T extends IDomainEvent>(eventType: string, handler: (event: T) => Promise<void>): void {
+  subscribe<T extends IDomainEvent>(
+    eventType: string,
+    handler: (event: T) => Promise<void>,
+  ): void {
     if (!this.customHandlers.has(eventType)) {
       this.customHandlers.set(eventType, []);
     }
-    this.customHandlers.get(eventType)!.push(handler as (event: IDomainEvent) => Promise<void>);
+    this.customHandlers
+      .get(eventType)!
+      .push(handler as (event: IDomainEvent) => Promise<void>);
     this.logger.debug(`Subscribed custom handler to event type: ${eventType}`);
   }
 }

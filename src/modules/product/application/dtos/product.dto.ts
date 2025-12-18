@@ -42,4 +42,3 @@ export class ProductDto {
     this.updatedAt = updatedAt;
   }
 }
-

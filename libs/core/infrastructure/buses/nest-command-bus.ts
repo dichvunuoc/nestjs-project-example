@@ -14,6 +14,6 @@ export class NestCommandBus implements ICommandBus {
    */
   async execute<T extends ICommand, R = any>(command: T): Promise<R> {
     // Không cần truyền generic <T> vào execute cũng được, TS tự suy luận
-    return this.cqrsCommandBus.execute(command) as Promise<R>;
+    return this.cqrsCommandBus.execute(command);
   }
 }

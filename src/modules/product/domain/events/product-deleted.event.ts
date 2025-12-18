@@ -34,4 +34,3 @@ export class ProductDeletedEvent implements IDomainEvent {
     this.metadata = metadata;
   }
 }
-
