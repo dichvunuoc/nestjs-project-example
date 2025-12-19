@@ -66,7 +66,7 @@ import { randomUUID } from 'crypto';
         },
 
         transport:
-          process.env.NODE_ENV !== 'production'
+          process.env.NODE_ENV !== 'production' && process.env.ENABLE_PRETTY_LOGGING === 'true'
             ? {
                 target: 'pino-pretty',
                 options: {

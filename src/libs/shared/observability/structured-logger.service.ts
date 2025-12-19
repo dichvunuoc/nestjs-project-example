@@ -167,7 +167,8 @@ export class StructuredLogger {
     // Add pretty print for development
     if (
       config?.prettyPrint !== false &&
-      this.serviceInfo.environment === 'development'
+      this.serviceInfo.environment === 'development' &&
+      process.env.ENABLE_PRETTY_LOGGING === 'true'
     ) {
       pinoConfig.transport = {
         target: 'pino-pretty',

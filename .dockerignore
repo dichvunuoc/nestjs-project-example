@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.git
+.vscode
+*.log
+.env
+nest-app
+nest-app-binary
+docker-compose.yml
+Dockerfile
+.dockerignore

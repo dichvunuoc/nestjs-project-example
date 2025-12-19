@@ -1,4 +1,10 @@
-import 'tsconfig-paths/register';
+if (process.env.NODE_ENV !== 'production' && !process.env.SKIP_TSCONFIG_PATHS) {
+  try {
+    require('tsconfig-paths/register');
+  } catch (e) {
+    // Ignore error if not found or failing in non-dev env
+  }
+}
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
