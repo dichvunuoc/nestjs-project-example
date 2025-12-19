@@ -1,5 +1,4 @@
-import { BaseValueObject } from '@core/domain';
-import { DomainException } from '@core/common';
+import { BaseValueObject, DomainException } from 'src/libs/core/domain';
 
 /**
  * Price Value Object
@@ -49,6 +48,3 @@ export class Price extends BaseValueObject {
     return `${this.currency} ${this.amount.toFixed(2)}`;
   }
 }
-
-
-

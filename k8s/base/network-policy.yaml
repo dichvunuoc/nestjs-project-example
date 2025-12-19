@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-traffic
+spec:
+  podSelector:
+    matchLabels:
+      app: nestjs-app
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nestjs-app-ingress # Assuming ingress controller labeling or similar, usually we allow from all for public web app or from ingress controller specifically.
+      # For simplicity in this base template, often we start with allowing specific ports
+    ports:
+    - protocol: TCP
+      port: 3000
+  egress:
+  - to:
+    - ipBlock: # Allow DB/Redis/DNS
+        cidr: 0.0.0.0/0
+        except:
+        - 10.6.0.0/16 # Example internal

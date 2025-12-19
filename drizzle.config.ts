@@ -1,7 +1,10 @@
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  schema: './src/modules/**/infrastructure/persistence/drizzle/schema/*.ts',
+  schema: [
+    './src/modules/**/infrastructure/persistence/drizzle/schema/*.ts',
+    './src/libs/shared/database/outbox/drizzle/schema/outbox.schema.ts',
+  ],
   out: './drizzle',
   dialect: 'postgresql', // hoặc 'mysql', 'sqlite' tùy database bạn dùng
   dbCredentials: {
@@ -10,5 +13,6 @@ export default defineConfig({
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'nestjs_project',
+    ssl: false,
   },
 });

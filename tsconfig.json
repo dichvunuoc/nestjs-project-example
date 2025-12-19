@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "target": "ES2023",
+    "target": "ESNext",
     "resolvePackageJsonExports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
@@ -15,8 +15,10 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "paths": {
-      "@core": ["libs/core/index.ts"],
-      "@core/*": ["libs/core/*"],
+      "@core": ["src/libs/core", "libs/core"],
+      "@core/*": ["src/libs/core/*", "libs/core/*"],
+      "@shared": ["src/libs/shared", "libs/shared"],
+      "@shared/*": ["src/libs/shared/*", "libs/shared/*"],
       "@modules/*": ["src/modules/*"]
     },
     "incremental": true,

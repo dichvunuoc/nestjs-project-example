@@ -6,16 +6,5 @@
     "deleteOutDir": true,
     "webpack": false,
     "tsConfigPath": "tsconfig.json"
-  },
-  "projects": {
-    "core": {
-      "type": "library",
-      "root": "libs/core",
-      "entryFile": "index",
-      "sourceRoot": "libs/core",
-      "compilerOptions": {
-        "tsConfigPath": "tsconfig.json"
-      }
-    }
   }
 }

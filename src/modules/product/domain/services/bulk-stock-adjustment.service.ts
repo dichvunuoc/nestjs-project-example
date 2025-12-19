@@ -1,61 +1,43 @@
-import { DomainException } from '@core/common';
+import { DomainException, BaseService } from 'src/libs/core/domain';
+import {
+  IStockAdjustmentItem,
+  IStockAdjustmentResult,
+  IBulkStockAdjustmentOptions,
+} from 'src/libs/core/domain';
 import { Product } from '../entities';
-import type { StockAdjustmentItem } from '../../application/commands/bulk-stock-adjustment.command';
 
 /**
- * Stock Adjustment Result
- * Represents the result of adjusting a single product's stock
+ * Re-export interfaces for convenience
+ * Modules có thể import từ đây thay vì import trực tiếp từ @core
  */
-export interface StockAdjustmentResult {
-  productId: string;
-  success: boolean;
-  previousStock: number;
-  newStock: number;
-  quantity: number;
-  error?: string;
-  warning?: string;
-}
-
-/**
- * Bulk Stock Adjustment Options
- */
-export interface BulkStockAdjustmentOptions {
-  /**
-   * Maximum total stock allowed per product after adjustment
-   */
-  maxStockLimit?: number;
-
-  /**
-   * Minimum stock threshold warning
-   */
-  minStockThreshold?: number;
-
-  /**
-   * Whether to allow partial success
-   */
-  allowPartialSuccess?: boolean;
-}
+export type StockAdjustmentItem = IStockAdjustmentItem;
+export type StockAdjustmentResult = IStockAdjustmentResult;
+export type BulkStockAdjustmentOptions = IBulkStockAdjustmentOptions;
 
 /**
  * Bulk Stock Adjustment Service
  *
  * Domain Service chứa business logic phức tạp cho bulk stock adjustment.
+ * Extends BaseService để nhận các utilities cơ bản.
+ *
  * Theo DDD, Domain Services được dùng khi:
  * - Logic không thuộc về một aggregate cụ thể
  * - Cần phối hợp nhiều aggregates
  * - Logic nghiệp vụ phức tạp cần tách riêng
  *
  * Service này:
- * - Pure TypeScript, không phụ thuộc framework
+ * - Extends BaseService từ Core
  * - Chứa validation rules và business rules
  * - Có thể test độc lập
  * - Có thể tái sử dụng ở nhiều nơi
  */
-export class BulkStockAdjustmentService {
+export class BulkStockAdjustmentService extends BaseService {
   /**
    * Validate products exist and no duplicates
    */
-  constructor() {}
+  constructor() {
+    super();
+  }
   validateProducts(
     adjustments: StockAdjustmentItem[],
     productMap: Map<string, Product>,
@@ -240,7 +222,7 @@ export class BulkStockAdjustmentService {
           previousStock: product.stock,
           newStock: product.stock,
           quantity: adjustment.quantity,
-          error: error.message || 'Unknown error during adjustment',
+          error: (error as Error).message || 'Unknown error during adjustment',
         });
       }
     }
@@ -271,7 +253,7 @@ export class BulkStockAdjustmentService {
         // Log rollback error but don't throw - we're already in error state
         // In production, this should use proper logging
         throw new DomainException(
-          `Failed to rollback adjustment for product ${adjustment.productId}: ${rollbackError.message}`,
+          `Failed to rollback adjustment for product ${adjustment.productId}: ${(rollbackError as Error).message}`,
         );
       }
     }

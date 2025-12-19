@@ -1,212 +1,397 @@
-# Product Module - DDD/CQRS Example
+# 📦 Product Module
 
-Module demo đầy đủ các thành phần theo chuẩn DDD/CQRS.
+## 📋 Tổng quan
 
-## Cấu trúc Module
+Module quản lý sản phẩm, triển khai theo kiến trúc **DDD + CQRS**.
+
+## 🏗️ Kiến trúc Module
 
 ```
-product/
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          HTTP Request                                   │
+│                               │                                         │
+│                               ▼                                         │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                    ProductController                            │   │
+│  │                  (Infrastructure/HTTP)                          │   │
+│  └──────────────────────┬────────────────────┬─────────────────────┘   │
+│                         │                    │                          │
+│            ┌────────────▼────────┐ ┌────────▼─────────┐                │
+│            │    Command Bus      │ │    Query Bus     │                │
+│            └────────────┬────────┘ └────────┬─────────┘                │
+│                         │                    │                          │
+│  ┌──────────────────────▼────────────────────▼─────────────────────┐   │
+│  │                   APPLICATION LAYER                              │   │
+│  │  ┌─────────────────────┐    ┌─────────────────────┐             │   │
+│  │  │  Command Handlers   │    │   Query Handlers    │             │   │
+│  │  │  • CreateProduct    │    │  • GetProduct       │             │   │
+│  │  │  • UpdateProduct    │    │  • GetProductList   │             │   │
+│  │  │  • DeleteProduct    │    │                     │             │   │
+│  │  │  • IncreaseStock    │    │                     │             │   │
+│  │  │  • DecreaseStock    │    │                     │             │   │
+│  │  │  • BulkStockAdj     │    │                     │             │   │
+│  │  └──────────┬──────────┘    └──────────┬──────────┘             │   │
+│  └─────────────┼─────────────────────────┼──────────────────────────┘  │
+│                │                          │                             │
+│  ┌─────────────▼──────────────────────────▼─────────────────────────┐  │
+│  │                    DOMAIN LAYER                                   │  │
+│  │  ┌─────────────────────────────────────────────────────────────┐ │  │
+│  │  │                    Product (Aggregate Root)                 │ │  │
+│  │  │  • create()        • increaseStock()    • rename()          │ │  │
+│  │  │  • reconstitute()  • decreaseStock()    • changePrice()     │ │  │
+│  │  │  • delete()        • updateInfo()                           │ │  │
+│  │  └─────────────────────────────────────────────────────────────┘ │  │
+│  │  ┌───────────────────┐  ┌────────────────────────────────────┐  │  │
+│  │  │   Value Objects   │  │         Domain Services            │  │  │
+│  │  │  • ProductId      │  │  • ProductUniquenessService        │  │  │
+│  │  │  • Price          │  │  • BulkStockAdjustmentService      │  │  │
+│  │  └───────────────────┘  └────────────────────────────────────┘  │  │
+│  │  ┌─────────────────────────────────────────────────────────────┐ │  │
+│  │  │                    Domain Events                            │ │  │
+│  │  │  • ProductCreatedEvent    • ProductDeletedEvent             │ │  │
+│  │  │  • ProductUpdatedEvent    • BulkStockAdjustedEvent          │ │  │
+│  │  └─────────────────────────────────────────────────────────────┘ │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+│                │                          │                             │
+│  ┌─────────────▼──────────────────────────▼─────────────────────────┐  │
+│  │                 INFRASTRUCTURE LAYER                              │  │
+│  │  ┌─────────────────────┐    ┌─────────────────────┐              │  │
+│  │  │  ProductRepository  │    │   ProductReadDao    │              │  │
+│  │  │    (Write Side)     │    │    (Read Side)      │              │  │
+│  │  └──────────┬──────────┘    └──────────┬──────────┘              │  │
+│  │             │                          │                          │  │
+│  │  ┌──────────▼──────────────────────────▼──────────────────────┐  │  │
+│  │  │                    Drizzle ORM                              │  │  │
+│  │  │              (products table schema)                        │  │  │
+│  │  └─────────────────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+## 📁 Cấu trúc thư mục
+
+```
+src/modules/product/
 ├── domain/                          # Domain Layer (Pure TypeScript)
 │   ├── entities/
-│   │   └── product.entity.ts        # Product Aggregate Root
+│   │   └── product.entity.ts        # Aggregate Root
+│   │
 │   ├── value-objects/
-│   │   ├── price.value-object.ts    # Price Value Object
-│   │   └── product-id.value-object.ts
+│   │   ├── product-id.value-object.ts
+│   │   └── price.value-object.ts
+│   │
 │   ├── events/
-│   │   ├── product-created.event.ts  # Domain Events
+│   │   ├── product-created.event.ts
 │   │   ├── product-updated.event.ts
-│   │   └── product-deleted.event.ts
+│   │   ├── product-deleted.event.ts
+│   │   └── bulk-stock-adjusted.event.ts
+│   │
+│   ├── services/
+│   │   ├── product-uniqueness.service.ts    # Domain Service
+│   │   └── bulk-stock-adjustment.service.ts # Domain Service
+│   │
 │   └── repositories/
-│       └── product.repository.interface.ts  # Repository Interface (Port)
+│       └── product.repository.interface.ts  # Port (Interface)
 │
-├── application/                     # Application Layer (Use Cases)
+├── application/                     # Application Layer
 │   ├── commands/
 │   │   ├── create-product.command.ts
 │   │   ├── update-product.command.ts
 │   │   ├── delete-product.command.ts
 │   │   ├── increase-stock.command.ts
 │   │   ├── decrease-stock.command.ts
-│   │   └── handlers/                # Command Handlers
+│   │   ├── bulk-stock-adjustment.command.ts
+│   │   └── handlers/
+│   │       ├── create-product.handler.ts
+│   │       ├── update-product.handler.ts
+│   │       └── ...
+│   │
 │   ├── queries/
 │   │   ├── get-product.query.ts
 │   │   ├── get-product-list.query.ts
-│   │   └── handlers/               # Query Handlers
+│   │   ├── handlers/
+│   │   │   ├── get-product.handler.ts
+│   │   │   └── get-product-list.handler.ts
+│   │   └── ports/
+│   │       └── product-read-dao.interface.ts  # Port (Interface)
+│   │
 │   └── dtos/
-│       ├── product.dto.ts           # Data Transfer Objects
+│       ├── product.dto.ts           # Read Model DTO
 │       ├── create-product.dto.ts
 │       └── update-product.dto.ts
 │
-└── infrastructure/                  # Infrastructure Layer (Adapters)
-    ├── persistence/
-    │   ├── drizzle/
-    │   │   └── schema/
-    │   │       └── product.schema.ts  # Drizzle Schema
-    │   ├── write/
-    │   │   └── product.repository.ts  # Repository Implementation (Adapter)
-    │   └── read/
-    │       └── product-read-dao.ts    # Read DAO (Optimized for queries)
-    └── http/
-        └── product.controller.ts     # HTTP Controller
+├── infrastructure/                  # Infrastructure Layer
+│   ├── http/
+│   │   └── product.controller.ts    # HTTP Adapter
+│   │
+│   └── persistence/
+│       ├── drizzle/
+│       │   └── schema/
+│       │       └── product.schema.ts
+│       │
+│       ├── write/
+│       │   └── product.repository.ts    # Adapter for IProductRepository
+│       │
+│       ├── read/
+│       │   └── product-read-dao.ts      # Adapter for IProductReadDao
+│       │
+│       └── product-uniqueness-checker.ts  # Adapter for IProductUniquenessChecker
+│
+└── product.module.ts                # NestJS Module
 ```
 
-## Các Thành Phần Chính
+## 🔄 Luồng dữ liệu (Data Flow)
 
-### 1. Domain Layer (Pure Business Logic)
+### Write Flow (Command Side)
 
-#### Aggregate Root
-- **Product**: Aggregate Root quản lý toàn bộ business logic
-  - Factory methods: `create()`, `reconstitute()`
-  - Business methods: `update()`, `increaseStock()`, `decreaseStock()`, `delete()`
-  - Tự động emit domain events khi có thay đổi
+```
+HTTP POST /products
+        │
+        ▼
+┌───────────────────┐
+│ ProductController │
+│   create(dto)     │
+└────────┬──────────┘
+         │ new CreateProductCommand(...)
+         ▼
+┌────────────────────┐
+│    Command Bus     │
+│    execute()       │
+└────────┬───────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────┐
+│               CreateProductHandler                          │
+│  1. Validate uniqueness (Domain Service)                    │
+│     └─► ProductUniquenessService.ensureNameIsUnique()       │
+│           └─► IProductUniquenessChecker.isUnique() [Port]   │
+│                 └─► ProductUniquenessChecker [Adapter]      │
+│                       └─► Drizzle ORM Query                 │
+│                                                             │
+│  2. Create Domain Entity                                    │
+│     └─► Product.create(productId, props)                    │
+│           └─► Validation in Entity                          │
+│           └─► ProductCreatedEvent added                     │
+│                                                             │
+│  3. Persist via Repository                                  │
+│     └─► IProductRepository.save(product) [Port]             │
+│           └─► ProductRepository [Adapter]                   │
+│                 └─► Drizzle ORM Insert                      │
+│                 └─► Events → Outbox Table (same tx)         │
+└─────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────┐
+│            Outbox Processor (Background)                    │
+│  1. Poll outbox table                                       │
+│  2. Publish ProductCreatedEvent to Event Bus                │
+│  3. Projections/Subscribers handle event                    │
+└─────────────────────────────────────────────────────────────┘
+```
 
-#### Value Objects
-- **Price**: Đại diện cho giá tiền với currency
-- **ProductId**: Đảm bảo ID luôn hợp lệ
+### Read Flow (Query Side)
 
-#### Domain Events
-- **ProductCreatedEvent**: Khi tạo product mới
-- **ProductUpdatedEvent**: Khi cập nhật product
-- **ProductDeletedEvent**: Khi xóa product
+```
+HTTP GET /products/:id
+        │
+        ▼
+┌───────────────────┐
+│ ProductController │
+│   getById(id)     │
+└────────┬──────────┘
+         │ new GetProductQuery(id)
+         ▼
+┌────────────────────┐
+│     Query Bus      │
+│     execute()      │
+└────────┬───────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  GetProductHandler                          │
+│  1. Query via Read DAO                                      │
+│     └─► IProductReadDao.findById(id) [Port]                 │
+│           └─► ProductReadDao [Adapter]                      │
+│                 └─► Drizzle ORM Select                      │
+│                 └─► Return ProductDto (flat DTO)            │
+│                                                             │
+│  2. Return DTO directly (no Domain Entity)                  │
+└─────────────────────────────────────────────────────────────┘
+         │
+         ▼
+┌───────────────────┐
+│   ProductDto      │
+│   (JSON Response) │
+└───────────────────┘
+```
 
-#### Repository Interface
-- **IProductRepository**: Interface (Port) định nghĩa contract
-- Infrastructure layer implement interface này (Adapter)
+## 🎯 Nguyên tắc DDD trong Module này
 
-### 2. Application Layer (Use Cases)
+### 1. Aggregate Root (Product)
 
-#### Commands (Write Operations)
-- `CreateProductCommand`: Tạo product mới
-- `UpdateProductCommand`: Cập nhật product
-- `DeleteProductCommand`: Xóa product
-- `IncreaseStockCommand`: Tăng stock
-- `DecreaseStockCommand`: Giảm stock
+```typescript
+// Product là Aggregate Root - entry point duy nhất
+const product = Product.create(productId, props);
 
-#### Queries (Read Operations)
-- `GetProductQuery`: Lấy product theo ID
-- `GetProductListQuery`: Lấy danh sách products với pagination và filters
+// Mọi modification phải qua Aggregate Root
+product.increaseStock(10); // ✅ Đúng
+product.rename('New Name'); // ✅ Đúng
 
-#### Handlers
-- Command Handlers: Xử lý commands, sử dụng Aggregate Root
-- Query Handlers: Xử lý queries, sử dụng Read DAO
+// KHÔNG modify trực tiếp props
+product._props.stock = 10; // ❌ Sai - Bypass Aggregate
+```
 
-### 3. Infrastructure Layer (Technical Implementation)
+### 2. Factory Methods
 
-#### Persistence
-- **Drizzle Schema**: Định nghĩa database schema
-- **ProductRepository**: Implement IProductRepository, extend BaseAggregateRepository
-  - Tự động publish domain events khi save aggregate
-  - Optimistic Concurrency Control với version
-- **ProductReadDao**: Optimized cho read operations
+```typescript
+// Tạo mới: Qua factory method, emit event
+const product = Product.create(productId, props);
+// → ProductCreatedEvent được add
 
-#### HTTP
-- **ProductController**: REST API endpoints
-  - POST `/products` - Create product
-  - GET `/products/:id` - Get product by ID
-  - GET `/products` - Get product list
-  - PUT `/products/:id` - Update product
-  - DELETE `/products/:id` - Delete product
-  - POST `/products/:id/stock/increase` - Increase stock
-  - POST `/products/:id/stock/decrease` - Decrease stock
+// Reconstitute từ DB: Không emit event
+const product = Product.reconstitute(id, props, version, createdAt, updatedAt);
+// → Không có event
+```
 
-## Dependency Rules
+### 3. Domain Events
 
-### Domain Layer
-- ✅ **ĐƯỢC**: `@core/domain`, `@core/common`
-- ❌ **CẤM**: `application`, `infrastructure`, `@nestjs/*`, `drizzle-orm`
+```typescript
+// Events chỉ được emit từ Aggregate Root
+product.increaseStock(10);
+// → ProductUpdatedEvent với { stock: newStock }
 
-### Application Layer
-- ✅ **ĐƯỢC**: `domain`, `@core/application`
-- ❌ **CẤM**: `infrastructure` (trừ Interface), `drizzle-orm`, `express`
+// Events được tự động publish sau save
+await repository.save(product);
+// → Outbox Pattern: Events lưu vào DB cùng transaction
+// → Outbox Processor publish sau đó
+```
 
-### Infrastructure Layer
-- ✅ **ĐƯỢC**: `domain`, `application`, `@core/*`, `@nestjs/*`, `drizzle-orm`
+### 4. Value Objects
 
-## Flow Example
+```typescript
+// Value Objects là immutable và self-validating
+const price = new Price(99.99, 'USD');
 
-### Create Product Flow
+// So sánh theo value
+const price1 = new Price(99.99, 'USD');
+const price2 = new Price(99.99, 'USD');
+price1.equals(price2); // true
 
-1. **HTTP Request** → `ProductController.create()`
-2. **Controller** → Tạo `CreateProductCommand` → Gửi qua `CommandBus`
-3. **CommandBus** → Route đến `CreateProductHandler`
-4. **Handler** → Sử dụng `IProductRepository` (interface)
-5. **Repository** → Load/create `Product` aggregate
-6. **Aggregate** → Business logic + emit `ProductCreatedEvent`
-7. **Repository** → Save aggregate + publish domain events
-8. **EventBus** → Publish events (có thể trigger projections)
+// Operations trả về instance mới
+const newPrice = price.multiply(1.1); // Price(109.99, 'USD')
+```
 
-### Get Product Flow
+### 5. Domain Services
 
-1. **HTTP Request** → `ProductController.getById()`
-2. **Controller** → Tạo `GetProductQuery` → Gửi qua `QueryBus`
-3. **QueryBus** → Route đến `GetProductHandler`
-4. **Handler** → Sử dụng `IProductReadDao` (optimized read)
-5. **Read DAO** → Query database → Return `ProductDto`
+```typescript
+// Domain Service cho logic không thuộc một Aggregate
+const uniquenessService = new ProductUniquenessService(checker);
+await uniquenessService.ensureNameIsUnique(name);
 
-## Database Migration
+// BulkStockAdjustmentService cho logic phức tạp
+const bulkService = new BulkStockAdjustmentService();
+const result = bulkService.processBulkAdjustment(
+  adjustments,
+  products,
+  options,
+);
+```
+
+## 🔧 API Endpoints
+
+### Commands (Write)
+
+| Method | Endpoint                       | Description           |
+| ------ | ------------------------------ | --------------------- |
+| POST   | `/products`                    | Create product        |
+| PUT    | `/products/:id`                | Update product        |
+| DELETE | `/products/:id`                | Delete product (soft) |
+| POST   | `/products/:id/stock/increase` | Increase stock        |
+| POST   | `/products/:id/stock/decrease` | Decrease stock        |
+| POST   | `/products/stock/bulk-adjust`  | Bulk stock adjustment |
+
+### Queries (Read)
+
+| Method | Endpoint        | Description               |
+| ------ | --------------- | ------------------------- |
+| GET    | `/products/:id` | Get product by ID         |
+| GET    | `/products`     | List products (paginated) |
+
+### Example Requests
 
 ```bash
-# Generate migration từ schema
-bun run db:generate
+# Create Product
+curl -X POST http://localhost:3000/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "iPhone 15",
+    "description": "Latest iPhone",
+    "priceAmount": 999.99,
+    "priceCurrency": "USD",
+    "stock": 100,
+    "category": "Electronics"
+  }'
 
-# Run migration
-bun run db:migrate
+# Bulk Stock Adjustment
+curl -X POST http://localhost:3000/products/stock/bulk-adjust \
+  -H "Content-Type: application/json" \
+  -d '{
+    "adjustments": [
+      { "productId": "uuid-1", "quantity": 10, "reason": "Restock" },
+      { "productId": "uuid-2", "quantity": -5, "reason": "Damaged" }
+    ],
+    "options": {
+      "maxStockLimit": 1000,
+      "allowPartialSuccess": true
+    }
+  }'
 ```
 
-## API Examples
+## 🧪 Testing Strategy
 
-### Create Product
-```bash
-POST /products
-Content-Type: application/json
+### Unit Tests (Domain Layer)
 
-{
-  "name": "Laptop",
-  "description": "High performance laptop",
-  "priceAmount": 999.99,
-  "priceCurrency": "USD",
-  "stock": 10,
-  "category": "Electronics"
-}
+```typescript
+// product.entity.spec.ts
+describe('Product Entity', () => {
+  it('should create product and emit event', () => {
+    const product = Product.create(productId, validProps);
+
+    expect(product.id).toBe(productId.value);
+    expect(product.getDomainEvents()).toHaveLength(1);
+    expect(product.getDomainEvents()[0].eventType).toBe('ProductCreated');
+  });
+
+  it('should throw DomainException for invalid stock', () => {
+    expect(() => product.decreaseStock(9999)).toThrow(DomainException);
+  });
+});
 ```
 
-### Get Product
-```bash
-GET /products/{id}
+### Integration Tests (Repository)
+
+```typescript
+describe('ProductRepository', () => {
+  it('should save and retrieve product', async () => {
+    const product = Product.create(productId, validProps);
+
+    await repository.save(product);
+    const retrieved = await repository.getById(product.id);
+
+    expect(retrieved).not.toBeNull();
+    expect(retrieved!.name).toBe(product.name);
+  });
+});
 ```
 
-### Get Product List
-```bash
-GET /products?page=1&limit=10&category=Electronics&search=laptop
-```
+## 🔗 Dependencies
 
-### Update Product
-```bash
-PUT /products/{id}
-Content-Type: application/json
+- `@core` - Base abstractions
+- `@shared` - Infrastructure implementations
+- `src/database` - Database configuration
 
-{
-  "name": "Updated Laptop",
-  "priceAmount": 899.99
-}
-```
+## 📚 Related Documentation
 
-### Increase Stock
-```bash
-POST /products/{id}/stock/increase
-Content-Type: application/json
-
-{
-  "quantity": 5
-}
-```
-
-## Notes
-
-- **Optimistic Concurrency Control**: Sử dụng version để tránh lost updates
-- **Domain Events**: Tự động publish khi aggregate được save
-- **CQRS Separation**: Write side (Aggregate) và Read side (Read DAO) tách biệt
-- **Dependency Inversion**: Application layer chỉ phụ thuộc vào interfaces (Ports), không phụ thuộc vào implementations (Adapters)
-
-
-
-
+- [Domain Layer Guide](./domain/README.md)
+- [Application Layer Guide](./application/README.md)
+- [Infrastructure Layer Guide](./infrastructure/README.md)

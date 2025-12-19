@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  # In a real setup, you might reference secrets here or use secretGenerator
+
+patches:
+  # Example: Change replica count for dev
+  - target:
+      kind: Deployment
+      name: nestjs-app
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1

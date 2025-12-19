@@ -1,36 +1,24 @@
-import { IDomainEvent } from '@core/domain';
+import { BaseDomainEvent, IEventMetadata } from 'src/libs/core/domain';
+
+/**
+ * Product Deleted Event Data
+ * Empty object as deleted events don't need payload
+ */
+export type ProductDeletedEventData = Record<string, never>;
 
 /**
  * Product Deleted Domain Event
- * Published when a product is deleted
+ *
+ * Published when a product is (soft) deleted.
+ * The aggregateId contains the deleted product's ID.
+ *
+ * Event Consumers can:
+ * - Mark product as deleted in Read Model
+ * - Remove from search index
+ * - Notify dependent services
  */
-export class ProductDeletedEvent implements IDomainEvent {
-  eventId: string;
-  eventType: string;
-  aggregateId: string;
-  aggregateType: string;
-  occurredAt: Date;
-  data: {};
-  metadata?: {
-    userId?: string;
-    correlationId?: string;
-    causationId?: string;
-  };
-
-  constructor(
-    aggregateId: string,
-    metadata?: {
-      userId?: string;
-      correlationId?: string;
-      causationId?: string;
-    },
-  ) {
-    this.eventId = `${aggregateId}-${Date.now()}`;
-    this.eventType = 'ProductDeleted';
-    this.aggregateId = aggregateId;
-    this.aggregateType = 'Product';
-    this.occurredAt = new Date();
-    this.data = {};
-    this.metadata = metadata;
+export class ProductDeletedEvent extends BaseDomainEvent<ProductDeletedEventData> {
+  constructor(aggregateId: string, metadata?: IEventMetadata) {
+    super(aggregateId, 'Product', 'ProductDeleted', {}, metadata);
   }
 }

@@ -41,5 +41,8 @@ lerna-debug.log*
 
 # Bun
 # Note: bun.lockb should be committed to version control
+/build
+/nest-app
+/nest-app-binary
 
 #
