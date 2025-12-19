@@ -80,43 +80,45 @@ export class PlaceOrderHandler implements ICommandHandler<
     const productMap = await this.fetchAndValidateProducts(command.items);
 
     // 2. Execute transaction with UnitOfWork
-    const orderId = await this.unitOfWork.runInTransaction(async (txContext) => {
-      this.logger.debug(`Transaction started: ${txContext.transactionId}`, {
-        itemCount: command.items.length,
-      });
+    const orderId = await this.unitOfWork.runInTransaction(
+      async (txContext) => {
+        this.logger.debug(`Transaction started: ${txContext.transactionId}`, {
+          itemCount: command.items.length,
+        });
 
-      // 2a. Decrease stock for each product
-      const orderItems = await this.reserveStock(
-        command.items,
-        productMap,
-        txContext.transaction,
-      );
+        // 2a. Decrease stock for each product
+        const orderItems = await this.reserveStock(
+          command.items,
+          productMap,
+          txContext.transaction,
+        );
 
-      // 2b. Create order aggregate
-      const orderIdVO = new OrderId(randomUUID());
-      const order = Order.create(
-        orderIdVO,
-        {
-          customerId: command.customerId,
-          items: orderItems,
-          shippingAddress: command.shippingAddress,
-        },
-        eventMetadata,
-      );
+        // 2b. Create order aggregate
+        const orderIdVO = new OrderId(randomUUID());
+        const order = Order.create(
+          orderIdVO,
+          {
+            customerId: command.customerId,
+            items: orderItems,
+            shippingAddress: command.shippingAddress,
+          },
+          eventMetadata,
+        );
 
-      // 2c. Save order (within same transaction)
-      await this.orderRepository.save(order, {
-        transaction: txContext.transaction,
-      });
+        // 2c. Save order (within same transaction)
+        await this.orderRepository.save(order, {
+          transaction: txContext.transaction,
+        });
 
-      this.logger.log(`Order created successfully: ${order.id}`, {
-        transactionId: txContext.transactionId,
-        totalAmount: order.totalAmount.amount,
-        itemCount: order.itemCount,
-      });
+        this.logger.log(`Order created successfully: ${order.id}`, {
+          transactionId: txContext.transactionId,
+          totalAmount: order.totalAmount.amount,
+          itemCount: order.itemCount,
+        });
 
-      return order.id;
-    });
+        return order.id;
+      },
+    );
 
     return orderId;
   }

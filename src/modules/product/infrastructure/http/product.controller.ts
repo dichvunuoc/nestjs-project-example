@@ -61,7 +61,8 @@ export class ProductController {
   constructor(
     @Inject(COMMAND_BUS_TOKEN) private readonly commandBus: ICommandBus,
     @Inject(QUERY_BUS_TOKEN) private readonly queryBus: IQueryBus,
-    @Inject(PRODUCT_READ_DAO_TOKEN) private readonly productReadDao: IProductReadDao,
+    @Inject(PRODUCT_READ_DAO_TOKEN)
+    private readonly productReadDao: IProductReadDao,
   ) {}
 
   // =========================================================================

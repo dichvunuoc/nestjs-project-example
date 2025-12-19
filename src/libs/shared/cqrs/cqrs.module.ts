@@ -5,17 +5,9 @@ import { NestQueryBus } from './buses/nest-query-bus';
 import { EventBus } from './events/event-bus';
 import { IdempotencyService } from './idempotency/idempotency.service';
 
-import {
-  COMMAND_BUS_TOKEN,
-  QUERY_BUS_TOKEN,
-  EVENT_BUS_TOKEN,
-} from '@core';
+import { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN, EVENT_BUS_TOKEN } from '@core';
 
-export {
-  COMMAND_BUS_TOKEN,
-  QUERY_BUS_TOKEN,
-  EVENT_BUS_TOKEN,
-};
+export { COMMAND_BUS_TOKEN, QUERY_BUS_TOKEN, EVENT_BUS_TOKEN };
 
 /**
  * CQRS Module - Global Module for DDD/CQRS Architecture

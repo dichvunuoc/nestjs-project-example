@@ -10,11 +10,7 @@ import {
   UNIT_OF_WORK_TOKEN,
 } from '@core';
 
-export {
-  DATABASE_WRITE_TOKEN,
-  DATABASE_READ_TOKEN,
-  UNIT_OF_WORK_TOKEN,
-};
+export { DATABASE_WRITE_TOKEN, DATABASE_READ_TOKEN, UNIT_OF_WORK_TOKEN };
 
 const logger = new Logger('DatabaseProvider');
 

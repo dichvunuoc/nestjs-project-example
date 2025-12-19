@@ -3,10 +3,7 @@ import type { IQueryHandler } from 'src/libs/core/application';
 import { NotFoundException } from 'src/libs/core/common';
 import { QueryHandler } from 'src/libs/shared/cqrs';
 import { GetOrderQuery } from '../get-order.query';
-import {
-  type IOrderReadDao,
-  type OrderReadModel,
-} from '../ports';
+import { type IOrderReadDao, type OrderReadModel } from '../ports';
 import { ORDER_READ_DAO_TOKEN } from '../../../constants/tokens';
 
 /**

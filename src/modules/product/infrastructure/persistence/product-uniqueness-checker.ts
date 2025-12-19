@@ -7,9 +7,7 @@ import {
 import { productsTable } from './drizzle/schema';
 import { DATABASE_READ_TOKEN, type DrizzleDB } from 'src/libs/shared';
 
-import {
-  PRODUCT_UNIQUENESS_CHECKER_TOKEN,
-} from '../../constants/tokens';
+import { PRODUCT_UNIQUENESS_CHECKER_TOKEN } from '../../constants/tokens';
 
 /**
  * Product Uniqueness Checker Implementation
