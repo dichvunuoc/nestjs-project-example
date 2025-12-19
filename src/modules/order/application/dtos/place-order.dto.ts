@@ -39,7 +39,7 @@ export class PlaceOrderDto {
   shippingAddress!: string;
 }
 
-import { Order } from '../../domain';
+import type { Order } from '../../domain';
 
 /**
  * Order Response DTO

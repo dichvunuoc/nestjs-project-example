@@ -108,12 +108,12 @@ export class OrderController {
   @Get()
   async getOrders(
     @Query('customerId') customerId?: string,
-    @Query('status') status?: OrderStatusEnum,
+    @Query('status') status?: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 20,
   ) {
     const query = new GetOrderListQuery(
-      { customerId, status },
+      { customerId, status: status as OrderStatusEnum },
       Number(page),
       Number(limit),
     );
