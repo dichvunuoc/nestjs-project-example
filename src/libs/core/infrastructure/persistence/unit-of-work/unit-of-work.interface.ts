@@ -26,8 +26,9 @@ export interface IUnitOfWork {
    * @returns The result of the work function
    * @throws Error if the transaction fails (all changes are rolled back)
    */
-  runInTransaction<T>(work: (context: ITransactionContext) => Promise<T>): Promise<T>;
-
+  runInTransaction<T>(
+    work: (context: ITransactionContext) => Promise<T>,
+  ): Promise<T>;
 }
 
 /**

@@ -16,7 +16,8 @@ export class GetProductHandler implements IQueryHandler<
   ProductDto
 > {
   constructor(
-    @Inject(PRODUCT_READ_DAO_TOKEN) private readonly productReadDao: IProductReadDao,
+    @Inject(PRODUCT_READ_DAO_TOKEN)
+    private readonly productReadDao: IProductReadDao,
   ) {}
 
   async execute(query: GetProductQuery): Promise<ProductDto> {

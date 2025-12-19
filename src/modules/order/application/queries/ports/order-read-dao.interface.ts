@@ -82,4 +82,3 @@ export interface IOrderReadDao {
    */
   invalidateCache(orderId: string): Promise<void>;
 }
-

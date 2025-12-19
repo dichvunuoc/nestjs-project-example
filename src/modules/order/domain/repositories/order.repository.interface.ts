@@ -18,4 +18,3 @@ export interface IOrderRepository extends IAggregateRepository<Order> {
    */
   exists(orderId: string): Promise<boolean>;
 }
-

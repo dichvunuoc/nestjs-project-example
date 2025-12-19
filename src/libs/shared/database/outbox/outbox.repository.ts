@@ -7,10 +7,7 @@ import {
 } from '@core/infrastructure';
 import { IDomainEvent } from '@core/domain';
 import { DATABASE_WRITE_TOKEN } from '../drizzle/database.provider';
-import {
-  outboxTable,
-  type OutboxRecord,
-} from './drizzle/schema/outbox.schema';
+import { outboxTable, type OutboxRecord } from './drizzle/schema/outbox.schema';
 import type { DrizzleDB, DrizzleTransaction } from '../drizzle/database.type';
 
 /**

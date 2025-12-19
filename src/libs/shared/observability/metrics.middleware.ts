@@ -1,7 +1,12 @@
 import { Injectable, NestMiddleware, Inject, Optional } from '@nestjs/common';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { performance } from 'perf_hooks';
-import { METER_TOKEN, METRICS_NAMES, ATTRIBUTE_KEYS, METRICS_CONFIG_TOKEN } from './constants';
+import {
+  METER_TOKEN,
+  METRICS_NAMES,
+  ATTRIBUTE_KEYS,
+  METRICS_CONFIG_TOKEN,
+} from './constants';
 
 /**
  * HTTP Metrics Middleware

@@ -7,9 +7,7 @@ import {
   OrderConfirmedEvent,
   OrderCancelledEvent,
 } from '../../domain/events';
-import {
-  type IOrderReadDao,
-} from '../../application/queries/ports';
+import { type IOrderReadDao } from '../../application/queries/ports';
 import { ORDER_READ_DAO_TOKEN } from '../../constants/tokens';
 
 /**
