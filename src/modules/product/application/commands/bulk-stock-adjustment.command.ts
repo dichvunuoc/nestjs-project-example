@@ -1,4 +1,4 @@
-import { ICommand } from '@core/application';
+import { ICommand } from 'src/libs/core/application';
 
 /**
  * Stock Adjustment Item

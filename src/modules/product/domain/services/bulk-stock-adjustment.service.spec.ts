@@ -1,7 +1,7 @@
 import { BulkStockAdjustmentService } from './bulk-stock-adjustment.service';
 import { Product } from '../entities';
 import { Price, ProductId } from '../value-objects';
-import { DomainException } from '@core/domain';
+import { DomainException } from 'src/libs/core/domain';
 import type { StockAdjustmentItem } from '../../application/commands/bulk-stock-adjustment.command';
 
 describe('BulkStockAdjustmentService', () => {

@@ -1,8 +1,10 @@
-import { CommandHandler, ICommandHandler } from '@core';
-import { NotFoundException } from '@core/common';
+import { ICommandHandler } from 'src/libs/core/application';
+import { NotFoundException } from 'src/libs/core/common';
+import { CommandHandler } from 'src/libs/shared/cqrs';
 import { IncreaseStockCommand } from '../increase-stock.command';
 import { type IProductRepository } from '@modules/product/domain/repositories';
 import { Inject } from '@nestjs/common';
+import { PRODUCT_REPOSITORY_TOKEN } from '../../../constants/tokens';
 
 /**
  * Increase Stock Command Handler
@@ -13,21 +15,18 @@ export class IncreaseStockHandler implements ICommandHandler<
   void
 > {
   constructor(
-    @Inject('IProductRepository')
+    @Inject(PRODUCT_REPOSITORY_TOKEN)
     private readonly productRepository: IProductRepository,
   ) {}
 
   async execute(command: IncreaseStockCommand): Promise<void> {
-    // Load aggregate
     const product = await this.productRepository.getById(command.id);
     if (!product) {
       throw NotFoundException.entity('Product', command.id);
     }
 
-    // Increase stock (domain logic + events)
     product.increaseStock(command.quantity);
 
-    // Save aggregate (repository will publish domain events)
     await this.productRepository.save(product);
   }
 }

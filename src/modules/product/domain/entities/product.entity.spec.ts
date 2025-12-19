@@ -1,6 +1,6 @@
 import { Product, ProductProps } from './product.entity';
 import { Price, ProductId } from '../value-objects';
-import { DomainException } from '@core/domain';
+import { DomainException } from 'src/libs/core/domain';
 
 describe('Product Entity', () => {
   const createValidProps = (): ProductProps => ({

@@ -1,4 +1,4 @@
-import { IQuery } from '@core/application';
+import { IQuery } from 'src/libs/core/application';
 import { ProductDto } from '../dtos';
 
 /**
@@ -10,6 +10,3 @@ export class GetProductQuery extends IQuery<ProductDto> {
     super();
   }
 }
-
-
-

@@ -1,6 +1,8 @@
-import { IDomainEvent } from '@core/domain';
-import { randomUUID } from 'crypto';
+import { BaseDomainEvent, IEventMetadata } from 'src/libs/core/domain';
 
+/**
+ * Individual stock adjustment item in a bulk operation
+ */
 export interface BulkStockAdjustmentItem {
   productId: string;
   previousStock: number;
@@ -9,6 +11,9 @@ export interface BulkStockAdjustmentItem {
   reason?: string;
 }
 
+/**
+ * Bulk Stock Adjusted Event Data
+ */
 export interface BulkStockAdjustedEventData {
   adjustments: BulkStockAdjustmentItem[];
   totalRequested: number;
@@ -20,41 +25,24 @@ export interface BulkStockAdjustedEventData {
 
 /**
  * Bulk Stock Adjusted Domain Event
- * Published when a bulk stock adjustment operation completes
- * This event can be used for:
- * - Audit logging
- * - Inventory analytics
+ *
+ * Published when a bulk stock adjustment operation completes.
+ * Contains summary of all adjustments made in the batch.
+ *
+ * Event Consumers can:
+ * - Audit logging with full adjustment details
+ * - Inventory analytics and reporting
  * - Notifications to warehouse systems
- * - Integration with external systems
+ * - Integration with external ERP/WMS systems
+ *
+ * Note: aggregateId is the batch reference or first product ID
  */
-export class BulkStockAdjustedEvent implements IDomainEvent {
-  eventId: string;
-  eventType: string;
-  aggregateId: string; // Can be a batch ID or first product ID
-  aggregateType: string;
-  occurredAt: Date;
-  data: BulkStockAdjustedEventData;
-  metadata?: {
-    userId?: string;
-    correlationId?: string;
-    causationId?: string;
-  };
-
+export class BulkStockAdjustedEvent extends BaseDomainEvent<BulkStockAdjustedEventData> {
   constructor(
-    aggregateId: string,
+    aggregateId: string, // Batch ID or first product ID
     data: BulkStockAdjustedEventData,
-    metadata?: {
-      userId?: string;
-      correlationId?: string;
-      causationId?: string;
-    },
+    metadata?: IEventMetadata,
   ) {
-    this.eventId = randomUUID();
-    this.eventType = 'BulkStockAdjusted';
-    this.aggregateId = aggregateId;
-    this.aggregateType = 'Product';
-    this.occurredAt = new Date();
-    this.data = data;
-    this.metadata = metadata;
+    super(aggregateId, 'Product', 'BulkStockAdjusted', data, metadata);
   }
 }

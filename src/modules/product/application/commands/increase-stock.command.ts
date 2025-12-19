@@ -1,4 +1,4 @@
-import { ICommand } from '@core/application';
+import { ICommand } from 'src/libs/core/application';
 
 /**
  * Increase Product Stock Command
@@ -9,6 +9,3 @@ export class IncreaseStockCommand implements ICommand {
     public readonly quantity: number,
   ) {}
 }
-
-
-

@@ -1,4 +1,4 @@
-import { BaseValueObject, DomainException } from '@core/domain';
+import { BaseValueObject, DomainException } from 'src/libs/core/domain';
 
 /**
  * Price Value Object

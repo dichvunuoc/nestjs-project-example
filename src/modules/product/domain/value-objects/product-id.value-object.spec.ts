@@ -1,5 +1,5 @@
 import { ProductId } from './product-id.value-object';
-import { DomainException } from '@core/domain';
+import { DomainException } from 'src/libs/core/domain';
 
 describe('ProductId Value Object', () => {
   describe('constructor', () => {

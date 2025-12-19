@@ -1,76 +1,109 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { eq, and } from 'drizzle-orm';
 
-// Import từ Core
-import { BaseAggregateRepository, EVENT_BUS_TOKEN } from '@core';
-import type { IEventBus } from '@core';
-import { ConcurrencyException } from '@core/common';
+// Import từ Core (interfaces only)
+import type {
+  IEventBus,
+  IOutboxRepository,
+} from 'src/libs/core/infrastructure';
+import { ConcurrencyException } from 'src/libs/core/common';
+import { OUTBOX_REPOSITORY_TOKEN } from 'src/libs/core/constants';
+
+// Import từ Shared (implementations)
+import {
+  BaseAggregateRepository,
+  SaveOptions,
+  EVENT_BUS_TOKEN,
+  DATABASE_WRITE_TOKEN,
+  type DrizzleDB,
+  type DrizzleTransaction,
+} from 'src/libs/shared';
 
 // Import Domain & Ports
 import { Product } from '../../../domain/entities';
 import { IProductRepository } from '../../../domain/repositories';
 
 // Import Infrastructure (Schema & Config)
-import {
-  productsTable,
-  type ProductRecordInsert,
-  type ProductRecord,
-} from '../drizzle/schema';
-import { DATABASE_WRITE_TOKEN } from 'src/database/database.provider'; // Điều chỉnh path nếu cần
+import { productsTable, type ProductRecord } from '../drizzle/schema';
 import { Price } from '@modules/product/domain/value-objects';
-import type { DrizzleDB, DrizzleTransaction } from 'src/database/database.type';
 
 /**
- * Product Repository Implementation (Adapter)
+ * Product Repository Implementation (Adapter) - WRITE SIDE ONLY
  *
- * Implements IProductRepository interface using Drizzle ORM
- * Extends BaseAggregateRepository để tự động publish domain events
+ * Implements IProductRepository interface using Drizzle ORM.
+ * Extends BaseAggregateRepository for automatic domain event publishing.
+ *
+ * ## CQRS Note
+ *
+ * This repository is for WRITE operations only:
+ * - save() - Persist aggregate with events
+ * - getById() - Load aggregate for modification
+ * - delete() - Remove aggregate
+ * - findByName() - Support uniqueness validation
+ * - existsByName() - Support uniqueness validation
+ * - findByCategory() - Load aggregates for bulk operations
+ *
+ * For READ operations (queries, search, statistics), use ProductReadDao.
+ *
+ * ## Event Publishing Strategy
+ *
+ * - With OutboxRepository: Uses Transactional Outbox Pattern (recommended)
+ * - Without OutboxRepository: Uses direct event publishing (simpler but less reliable)
+ *
+ * ## Transactional Outbox Pattern
+ *
+ * When enabled, events are stored in the same transaction as the aggregate.
+ * A separate worker (OutboxProcessor) polls and publishes events.
+ * This guarantees at-least-once delivery even if the application crashes.
  */
 @Injectable()
 export class ProductRepository
   extends BaseAggregateRepository<Product>
   implements IProductRepository
 {
+  private readonly logger = new Logger(ProductRepository.name);
+
   constructor(
     @Inject(DATABASE_WRITE_TOKEN)
     private readonly db: DrizzleDB,
     @Inject(EVENT_BUS_TOKEN) protected readonly eventBus: IEventBus,
+    @Optional()
+    @Inject(OUTBOX_REPOSITORY_TOKEN)
+    outboxRepository?: IOutboxRepository,
   ) {
-    super(eventBus);
+    // Enable outbox pattern if outboxRepository is provided
+    super(eventBus, outboxRepository, {
+      useOutbox: false, // Default to false, let Command Handler decide via save options (forceOutbox: true)
+    });
   }
 
   /**
-   * Persist aggregate to database với Optimistic Concurrency Control
-   * * @override
+   * Persist aggregate to database with Optimistic Concurrency Control
    */
   protected async persist(
     aggregate: Product,
     expectedVersion: number,
-    options?: { transaction?: DrizzleTransaction },
+    options?: SaveOptions,
   ): Promise<void> {
-    const db = options?.transaction || this.db;
+    const db = (options?.transaction as DrizzleTransaction) || this.db;
     const persistenceModel = this.toPersistence(aggregate);
 
-    // Chiến thuật: Dựa vào expectedVersion để quyết định Insert hay Update
-    // Giúp tiết kiệm 1 query SELECT kiểm tra tồn tại
     if (expectedVersion === 0) {
-      // Case 1: Tạo mới (Version 0 -> 1)
+      // INSERT for new aggregate
       await db.insert(productsTable).values(persistenceModel);
     } else {
-      // Case 2: Cập nhật (Optimistic Locking)
+      // UPDATE with version check (OCC)
       const result = await db
         .update(productsTable)
         .set(persistenceModel)
         .where(
           and(
             eq(productsTable.id, aggregate.id),
-            // Quan trọng: Chỉ update nếu version trong DB khớp với version lúc load lên
             eq(productsTable.version, expectedVersion),
           ),
         )
         .returning({ id: productsTable.id });
 
-      // Nếu không có dòng nào được update -> Có người khác đã sửa trước đó
       if (result.length === 0) {
         throw ConcurrencyException.versionMismatch(
           aggregate.id,
@@ -82,7 +115,7 @@ export class ProductRepository
   }
 
   /**
-   * Get aggregate by ID
+   * Get aggregate by ID for modification
    */
   async getById(id: string): Promise<Product | null> {
     const result = await this.db
@@ -100,13 +133,17 @@ export class ProductRepository
 
   /**
    * Delete aggregate (hard delete)
+   *
+   * Note: For soft delete, use product.delete() method instead.
    */
   async delete(id: string): Promise<void> {
     await this.db.delete(productsTable).where(eq(productsTable.id, id));
   }
 
   /**
-   * Find product by name
+   * Find product by name (exact match)
+   *
+   * Use case: Validate uniqueness before creating/updating product name
    */
   async findByName(name: string): Promise<Product | null> {
     const result = await this.db
@@ -124,6 +161,8 @@ export class ProductRepository
 
   /**
    * Find products by category
+   *
+   * Use case: Load aggregates in a category for bulk operations
    */
   async findByCategory(category: string): Promise<Product[]> {
     const results = await this.db
@@ -135,10 +174,11 @@ export class ProductRepository
   }
 
   /**
-   * Check if product name exists
+   * Check if product name already exists (for uniqueness validation)
+   *
+   * More efficient than findByName() when you only need existence check.
    */
   async existsByName(name: string): Promise<boolean> {
-    // Tối ưu: Chỉ select 1 trường (id) thay vì select *
     const result = await this.db
       .select({ id: productsTable.id })
       .from(productsTable)
@@ -148,20 +188,17 @@ export class ProductRepository
     return result.length > 0;
   }
 
-  // =================================================================
-  // PRIVATE MAPPERS (DRY Principle)
-  // =================================================================
+  // --- Mapping Methods ---
 
   /**
-   * Map từ Domain Entity -> Drizzle Persistence Model
+   * Map Domain Entity to Persistence Model
    */
   private toPersistence(aggregate: Product): ProductRecord {
     return {
       id: aggregate.id,
       name: aggregate.name,
       description: aggregate.description,
-      // Chuyển đổi Value Object Price sang primitive types
-      priceAmount: aggregate.price.amount.toString(), // Decimal trong DB thường lưu là string/numeric
+      priceAmount: aggregate.price.amount.toString(),
       priceCurrency: aggregate.price.currency,
       stock: aggregate.stock,
       category: aggregate.category,
@@ -173,7 +210,7 @@ export class ProductRepository
   }
 
   /**
-   * Map từ Drizzle Persistence Model -> Domain Entity
+   * Map Persistence Model to Domain Entity
    */
   private toDomain(row: ProductRecord): Product {
     return Product.reconstitute(
@@ -188,6 +225,7 @@ export class ProductRepository
       row.version,
       row.createdAt,
       row.updatedAt,
+      row.isDeleted ? row.updatedAt : null, // Use updatedAt as deletedAt for soft-deleted items
     );
   }
 }

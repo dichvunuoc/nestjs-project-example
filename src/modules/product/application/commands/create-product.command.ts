@@ -1,4 +1,4 @@
-import { ICommand } from '@core/application';
+import { ICommand } from 'src/libs/core/application';
 
 /**
  * Create Product Command
@@ -14,6 +14,3 @@ export class CreateProductCommand implements ICommand {
     public readonly category: string,
   ) {}
 }
-
-
-

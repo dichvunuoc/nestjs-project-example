@@ -1,8 +1,10 @@
-import { CommandHandler, ICommandHandler } from '@core';
-import { NotFoundException } from '@core/common';
+import { ICommandHandler } from 'src/libs/core/application';
+import { NotFoundException } from 'src/libs/core/common';
+import { CommandHandler } from 'src/libs/shared/cqrs';
 import { DeleteProductCommand } from '../delete-product.command';
 import { type IProductRepository } from '@modules/product/domain/repositories';
 import { Inject } from '@nestjs/common';
+import { PRODUCT_REPOSITORY_TOKEN } from '../../../constants/tokens';
 
 /**
  * Delete Product Command Handler
@@ -13,21 +15,18 @@ export class DeleteProductHandler implements ICommandHandler<
   void
 > {
   constructor(
-    @Inject('IProductRepository')
+    @Inject(PRODUCT_REPOSITORY_TOKEN)
     private readonly productRepository: IProductRepository,
   ) {}
 
   async execute(command: DeleteProductCommand): Promise<void> {
-    // Load aggregate
     const product = await this.productRepository.getById(command.id);
     if (!product) {
       throw NotFoundException.entity('Product', command.id);
     }
 
-    // Delete aggregate (domain logic + events)
     product.delete();
 
-    // Save aggregate (repository will publish domain events)
     await this.productRepository.save(product);
   }
 }

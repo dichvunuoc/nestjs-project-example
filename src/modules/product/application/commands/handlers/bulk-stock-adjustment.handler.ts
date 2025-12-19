@@ -1,5 +1,6 @@
-import { CommandHandler, ICommandHandler } from '@core';
-import { DomainException } from '@core/common';
+import { ICommandHandler } from 'src/libs/core/application';
+import { DomainException } from 'src/libs/core/common';
+import { CommandHandler } from 'src/libs/shared/cqrs';
 import {
   BulkStockAdjustmentCommand,
   type StockAdjustmentItem,
@@ -11,10 +12,8 @@ import {
   type StockAdjustmentResult,
 } from '@modules/product/domain';
 import { Inject } from '@nestjs/common';
+import { PRODUCT_REPOSITORY_TOKEN } from '../../../constants/tokens';
 
-/**
- * Bulk Stock Adjustment Result
- */
 export interface BulkStockAdjustmentResult {
   totalRequested: number;
   successful: number;
@@ -25,16 +24,6 @@ export interface BulkStockAdjustmentResult {
 
 /**
  * Bulk Stock Adjustment Command Handler
- *
- * Application Layer Handler - chỉ orchestrate, không chứa business logic
- * Business logic được xử lý bởi Domain Service (BulkStockAdjustmentService)
- *
- * Handler responsibilities:
- * 1. Load aggregates từ repository
- * 2. Gọi domain service để xử lý business logic
- * 3. Save aggregates sau khi xử lý
- * 4. Handle rollback nếu cần
- * 5. Return results
  */
 @CommandHandler(BulkStockAdjustmentCommand)
 export class BulkStockAdjustmentHandler implements ICommandHandler<
@@ -44,10 +33,9 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
   private readonly bulkStockAdjustmentService: BulkStockAdjustmentService;
 
   constructor(
-    @Inject('IProductRepository')
+    @Inject(PRODUCT_REPOSITORY_TOKEN)
     private readonly productRepository: IProductRepository,
   ) {
-    // Domain Service là pure TypeScript, không cần inject
     this.bulkStockAdjustmentService = new BulkStockAdjustmentService();
   }
 
@@ -56,7 +44,6 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
   ): Promise<BulkStockAdjustmentResult> {
     const { adjustments, options } = command;
 
-    // Step 1: Load all products from repository
     const productMap = new Map<string, Product>();
     for (const adjustment of adjustments) {
       if (!productMap.has(adjustment.productId)) {
@@ -68,12 +55,11 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
             productMap.set(adjustment.productId, product);
           }
         } catch (error) {
-          // Product not found or error loading - will be handled by domain service
+          // Will be handled by domain service
         }
       }
     }
 
-    // Step 2: Delegate business logic to Domain Service
     const serviceOptions = {
       maxStockLimit: options?.maxStockLimit,
       minStockThreshold: options?.minStockThreshold,
@@ -87,9 +73,7 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
         serviceOptions,
       );
 
-    // Step 3: Check if rollback needed (before saving)
     if (shouldRollback) {
-      // Rollback domain changes (products haven't been saved yet)
       this.bulkStockAdjustmentService.rollbackAdjustments(
         successfulAdjustments,
       );
@@ -100,7 +84,6 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
       );
     }
 
-    // Step 4: Save all successfully adjusted products
     const savedProducts: Array<{
       product: Product;
       adjustment: StockAdjustmentItem;
@@ -117,7 +100,6 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
         savedProducts.push({ product, adjustment, previousStock });
       }
 
-      // Step 5: Return results
       const successfulCount = results.filter((r) => r.success === true).length;
       return {
         totalRequested: adjustments.length,
@@ -127,16 +109,13 @@ export class BulkStockAdjustmentHandler implements ICommandHandler<
         warnings,
       };
     } catch (error) {
-      // If save fails, rollback domain changes
       if (savedProducts.length > 0) {
         try {
           this.bulkStockAdjustmentService.rollbackAdjustments(savedProducts);
-          // Try to save rolled back products
           for (const { product } of savedProducts) {
             await this.productRepository.save(product);
           }
         } catch (rollbackError) {
-          // Log rollback error
           console.error('Failed to rollback after save error:', rollbackError);
         }
       }

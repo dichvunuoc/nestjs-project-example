@@ -1,5 +1,5 @@
 import { Price } from './price.value-object';
-import { DomainException } from '@core/domain';
+import { DomainException } from 'src/libs/core/domain';
 
 describe('Price Value Object', () => {
   describe('constructor', () => {

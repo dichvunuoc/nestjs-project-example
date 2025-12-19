@@ -1,48 +1,59 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { ICommandHandler as ICoreCommandHandler } from '@core/application';
-import { NotFoundException } from '@core/common';
+import { ICommandHandler } from 'src/libs/core/application';
+import { NotFoundException } from 'src/libs/core/common';
+import { CommandHandler } from 'src/libs/shared/cqrs';
 import { UpdateProductCommand } from '../update-product.command';
 import { Inject } from '@nestjs/common';
 import { type IProductRepository } from '@modules/product/domain/repositories';
+import { PRODUCT_REPOSITORY_TOKEN } from '../../../constants/tokens';
 import { Price } from '@modules/product/domain';
 
 /**
  * Update Product Command Handler
  */
 @CommandHandler(UpdateProductCommand)
-export class UpdateProductHandler
-  implements
-    ICommandHandler<UpdateProductCommand, void>,
-    ICoreCommandHandler<UpdateProductCommand, void>
-{
+export class UpdateProductHandler implements ICommandHandler<
+  UpdateProductCommand,
+  void
+> {
   constructor(
-    @Inject('IProductRepository')
+    @Inject(PRODUCT_REPOSITORY_TOKEN)
     private readonly productRepository: IProductRepository,
   ) {}
 
   async execute(command: UpdateProductCommand): Promise<void> {
-    // Load aggregate
     const product = await this.productRepository.getById(command.id);
     if (!product) {
       throw NotFoundException.entity('Product', command.id);
     }
 
-    // Prepare update data
-
-    const price = command.priceAmount
-      ? new Price(command.priceAmount, command.priceCurrency || 'USD')
-      : product.price;
-
-    // Update aggregate (domain logic + events)
-    product.update({
+    // Update info fields
+    product.updateInfo({
       name: command.name,
       description: command.description,
-      price,
-      stock: command.stock,
       category: command.category,
     });
 
-    // Save aggregate (repository will publish domain events)
+    // Update price if provided
+    if (command.priceAmount) {
+      const newPrice = new Price(
+        command.priceAmount,
+        command.priceCurrency || 'USD',
+      );
+      product.changePrice(newPrice);
+    }
+
+    // Update stock if provided
+    if (command.stock !== undefined) {
+      const currentStock = product.stock;
+      const stockDifference = command.stock - currentStock;
+
+      if (stockDifference > 0) {
+        product.increaseStock(stockDifference, 'update');
+      } else if (stockDifference < 0) {
+        product.decreaseStock(-stockDifference, 'update');
+      }
+    }
+
     await this.productRepository.save(product);
   }
 }
