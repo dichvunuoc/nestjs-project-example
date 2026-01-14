@@ -14,3 +14,8 @@ export class UpdateProductCommand implements ICommand {
     public readonly category: string,
   ) {}
 }
+
+
+
+
+
