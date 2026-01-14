@@ -48,3 +48,8 @@ export class UpdateProductDto {
   @MaxLength(100, { message: 'Category cannot exceed 100 characters' })
   category?: string;
 }
+
+
+
+
+

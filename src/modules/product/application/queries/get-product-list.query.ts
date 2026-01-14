@@ -14,3 +14,8 @@ export class GetProductListQuery extends IQuery<ProductDto[]> {
     super();
   }
 }
+
+
+
+
+
