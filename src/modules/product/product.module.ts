@@ -4,24 +4,14 @@ import { ProductController } from './infrastructure/http';
 import { ProductRepository } from './infrastructure/persistence/write';
 import { ProductReadDao } from './infrastructure/persistence/read';
 import { ProductUniquenessChecker } from './infrastructure/persistence';
+import { EventHandlers } from './infrastructure';
 import {
   PRODUCT_REPOSITORY_TOKEN,
   PRODUCT_READ_DAO_TOKEN,
   PRODUCT_UNIQUENESS_CHECKER_TOKEN,
 } from './constants/tokens';
-import { ProductReadModelProjection } from './infrastructure/projections';
-import {
-  CreateProductHandler,
-  UpdateProductHandler,
-  DeleteProductHandler,
-  IncreaseStockHandler,
-  DecreaseStockHandler,
-  BulkStockAdjustmentHandler,
-} from './application/commands/handlers';
-import {
-  GetProductHandler,
-  GetProductListHandler,
-} from './application/queries/handlers';
+import { CommandHandlers } from './application/commands/handlers';
+import { QueryHandlers } from './application/queries/handlers';
 
 /**
  * Product Module
@@ -60,12 +50,7 @@ import {
     },
 
     // Command Handlers
-    CreateProductHandler,
-    UpdateProductHandler,
-    DeleteProductHandler,
-    IncreaseStockHandler,
-    DecreaseStockHandler,
-    BulkStockAdjustmentHandler,
+    ...CommandHandlers,
 
     // =================================================================
     // Read Side (Query)
@@ -79,15 +64,14 @@ import {
     },
 
     // Query Handlers
-    GetProductHandler,
-    GetProductListHandler,
+    ...QueryHandlers,
 
     // =================================================================
     // Event Handlers (Projections)
     // =================================================================
 
-    // Projection để sync Read Model khi có Domain Events
-    ProductReadModelProjection,
+    // Event Handlers
+    ...EventHandlers,
   ],
   exports: [
     PRODUCT_REPOSITORY_TOKEN,

@@ -1,7 +1,14 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
-import { BaseProjection, IProjectionLogger } from 'src/libs/core/application';
-import { DATABASE_WRITE_TOKEN, type DrizzleDB } from 'src/libs/shared';
+import {
+  BaseProjection,
+  IEventHandler,
+  IProjectionLogger,
+} from 'src/libs/core/application';
+import {
+  DATABASE_WRITE_TOKEN,
+  EventsHandler,
+  type DrizzleDB,
+} from 'src/libs/shared';
 import { PRODUCT_READ_DAO_TOKEN } from '../../constants/tokens';
 import {
   ProductCreatedEvent,
